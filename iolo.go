@@ -40,21 +40,8 @@ func main() {
 			continue
 		}
 
-		//c, err := json.Marshal(message)
-		//fmt.Println(string(c))
-
-		_, ok := message.Content["data"]
-
-		if !ok {
-			continue
-		}
-
-		mimeBundle := (message.Content["data"]).(map[string]interface{})
-
-		// There and back again
-		b, err := json.Marshal(mimeBundle)
-		fmt.Println(string(b))
-
+		c, err := json.Marshal(message)
+		fmt.Println(string(c))
 	}
 
 }
