@@ -200,7 +200,9 @@ func main() {
 		"Sec-WebSocket-Extensions": {"permessage-deflate; client_max_window_bits, x-webkit-deflate-frame"},
 	}
 
-	wsConn, resp, err := websocket.NewClient(rawConn, u, wsHeaders, 0, 1024*1024)
+	writeBufferSize := 1024 * 1024 * 2
+
+	wsConn, resp, err := websocket.NewClient(rawConn, u, wsHeaders, 0, writeBufferSize)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "websocket.NewClient Error: %s\nResp:%+v", err, resp)
 		os.Exit(5)
@@ -217,8 +219,8 @@ func main() {
 
 		err = wsConn.WriteJSON(message)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Problem writing JSON %v\n", err)
-			continue
+			fmt.Fprintf(os.Stderr, "Problem writing JSON %v.\nOutput too big?", err)
+			break
 		}
 	}
 
