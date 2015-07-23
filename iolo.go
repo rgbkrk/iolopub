@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -212,15 +211,12 @@ func main() {
 		message, err := iopub.ReadMessage()
 
 		if err != nil {
-			fmt.Errorf("%v\n", err)
+			fmt.Fprintf(os.Stderr, "%v\n", err)
 			continue
 		}
 
-		wsConn.WriteJSON(message)
 		wsConn.NextWriter(websocket.TextMessage)
-
-		c, err := json.Marshal(message)
-		fmt.Println(string(c))
+		wsConn.WriteJSON(message)
 	}
 
 }
