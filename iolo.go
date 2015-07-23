@@ -154,40 +154,43 @@ func RuntimeDir() (string, error) {
 }
 
 func main() {
+	connFile := flag.String("existing", "", "Path to connection file")
+	ioloHub := flag.String("hub", "http://127.0.0.1:8080", "IOLO Hub Base URL")
 	flag.Parse()
-	if flag.NArg() < 1 {
+
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+		flag.PrintDefaults()
+		fmt.Println()
+	}
+
+	if *connFile == "" {
+		flag.Usage()
 		log.Fatalln("Need a connection file.")
 	}
 
 	// Expects a runtime kernel-*.json
-	connInfo, err := juno.OpenConnectionFile(flag.Arg(0))
+	connInfo, err := juno.OpenConnectionFile(*connFile)
 
 	if err != nil {
 		log.Fatalf("%v\n", err)
-		os.Exit(1)
 	}
 
 	iopub, err := juno.NewIOPubSocket(connInfo, "")
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Couldn't start the iopub socket: %v", err)
-		os.Exit(2)
 	}
 
 	defer iopub.Close()
 
-	/*err = WatchRuntimes()
-	if err != nil {
-		fmt.Errorf("Couldn't watch the runtime dir: %v", err)
-	}*/
-
-	IOLOHubURL := "http://127.0.0.1:8080/ws"
-
-	u, err := url.Parse(IOLOHubURL)
+	u, err := url.Parse(*ioloHub)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to parse URL: %v", err)
 		os.Exit(3)
 	}
+
+	u.Path = "/ws"
 
 	rawConn, err := net.Dial("tcp", u.Host)
 	if err != nil {
