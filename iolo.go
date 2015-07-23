@@ -215,8 +215,11 @@ func main() {
 			continue
 		}
 
-		wsConn.NextWriter(websocket.TextMessage)
-		wsConn.WriteJSON(message)
+		err = wsConn.WriteJSON(message)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Problem writing JSON %v\n", err)
+			continue
+		}
 	}
 
 }
