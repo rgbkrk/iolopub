@@ -155,7 +155,7 @@ func RuntimeDir() (string, error) {
 
 func main() {
 	connFile := flag.String("existing", "", "Path to connection file")
-	ioloHub := flag.String("hub", "http://127.0.0.1:8080", "IOLO Hub Base URL")
+	ioloHub := flag.String("hub", "http://iolo.fict.io:80", "IOLO Hub Base URL")
 	flag.Parse()
 
 	flag.Usage = func() {
