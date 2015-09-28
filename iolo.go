@@ -17,6 +17,8 @@ import (
 	fsnotify "gopkg.in/fsnotify.v1"
 
 	"github.com/gorilla/websocket"
+
+	zmq "github.com/zeromq/goczmq"
 )
 
 // WatchRuntimes watches for new running kernels. This is a placeholder.
@@ -170,19 +172,11 @@ func main() {
 	}
 
 	// Expects a runtime kernel-*.json
-	connInfo, err := juno.OpenConnectionFile(*connFile)
+	connInfo, err := juno.NewConnectionInfo(*connFile)
 
 	if err != nil {
 		log.Fatalf("%v\n", err)
 	}
-
-	iopub, err := juno.NewIOPubSocket(connInfo, "")
-
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Couldn't start the iopub socket: %v", err)
-	}
-
-	defer iopub.Close()
 
 	u, err := url.Parse(*ioloHub)
 	if err != nil {
@@ -212,18 +206,24 @@ func main() {
 	}
 	defer wsConn.Close()
 
+	ioConnection := connInfo.IOPubConnectionString()
+	iopub := zmq.NewSubChanneler(ioConnection, "")
+	defer iopub.Destroy()
+
 	for {
-		message, err := iopub.ReadMessage()
-
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			continue
-		}
-
-		err = wsConn.WriteJSON(message)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Problem writing JSON %v.\nOutput too big?", err)
-			break
+		select {
+		case wireMessage := <-iopub.RecvChan:
+			var message juno.Message
+			err := message.ParseWireProtocol(wireMessage, connInfo)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Unable to read message %v\n", err)
+				continue
+			}
+			err = wsConn.WriteJSON(message)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Problem writing JSON %v.\nOutput too big?", err)
+				break
+			}
 		}
 	}
 
